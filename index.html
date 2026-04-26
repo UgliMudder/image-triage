@@ -29,26 +29,38 @@
 
         window.onload = loadNext;
 
-        async function loadNext() {
-            document.getElementById('display-img').style.display = 'none';
-            document.getElementById('msg').innerText = "Fetching next image...";
-            
-            const response = await fetch(`${API_URL}?action=getNext`);
-            const file = await response.json();
+        aasync function loadNext() {
+    const img = document.getElementById('display-img');
+    const msg = document.getElementById('msg');
+    
+    img.style.display = 'none';
+    msg.style.display = 'block';
+    msg.innerText = "Connecting to Warehouse Drive...";
 
-            if (file) {
-                currentImageId = file.id;
-                const img = document.getElementById('display-img');
-                img.src = file.url;
-                img.onload = () => {
-                    document.getElementById('msg').style.display = 'none';
-                    img.style.display = 'block';
-                };
-            } else {
-                document.body.innerHTML = "<h1>All mapped!</h1>";
-            }
+    try {
+        // We add a 'cache: no-store' to make sure we always get a fresh image
+        const response = await fetch(`${API_URL}?action=getNext`, {
+            method: 'GET',
+            redirect: 'follow'
+        });
+        
+        const file = await response.json();
+
+        if (file && file.url) {
+            currentImageId = file.id;
+            img.src = file.url;
+            img.onload = () => {
+                msg.style.display = 'none';
+                img.style.display = 'block';
+            };
+        } else {
+            msg.innerText = "All images mapped or none found in folder.";
         }
-
+    } catch (error) {
+        msg.innerText = "Connection Error. Check if Google Script is deployed as 'Anyone'.";
+        console.error(error);
+    }
+}
         const btn = document.getElementById('mic-btn');
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
