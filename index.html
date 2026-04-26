@@ -64,8 +64,11 @@
                     };
                     
                     img.onerror = () => {
-                        msg.innerText = "Image load blocked. Check Google Drive permissions.";
+                        // This will print the exact file format the script sent
+                        let format = file.url ? file.url.substring(0, 40) : "URL is missing (Old Script Running)";
+                        msg.innerText = "Browser refused to render this file.\nFormat: " + format;
                         img.style.display = 'none';
+                    };
                     };
                 } else {
                     msg.innerText = "All images mapped or trashed!";
