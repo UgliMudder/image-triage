@@ -1,41 +1,49 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventory Triage</title>
-    <style>
-        body { font-family: system-ui; text-align: center; background: #121212; color: white; padding: 20px; }
-        #img-container { width: 100%; max-width: 500px; height: 350px; margin: 10px auto; background: #000; display: flex; align-items: center; justify-content: center; border-radius: 15px; border: 2px solid #333; overflow: hidden; }
-        img { max-width: 100%; max-height: 100%; border-radius: 8px; }
-        
-        .btn-container { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-top: 10px; }
-        
-        #mic-btn { background: #00cc66; color: white; border: none; padding: 25px; width: 90%; max-width: 400px; font-size: 1.5rem; border-radius: 50px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,204,102,0.3); }
-        #mic-btn:active { transform: scale(0.98); }
-        
-        #trash-btn { background: #333; color: #ff4d4d; border: 2px solid #ff4d4d; padding: 15px; width: 90%; max-width: 400px; font-size: 1.2rem; border-radius: 50px; font-weight: bold; cursor: pointer; }
-        #trash-btn:active { background: #ff4d4d; color: white; }
-
-        #status { margin: 15px; color: #00ffcc; font-size: 1.2rem; min-height: 1.5em; }
-        #msg { padding: 20px; color: #888; font-size: 1.1rem; }
-    </style>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
 
-    <h1>Inventory Triage</h1>
-    <div id="img-container">
-        <p id="msg">Initial Load...</p>
-        <img id="display-img" style="display:none;">
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col items-center p-4">
+
+    <h1 class="text-3xl font-extrabold text-white mt-6 mb-2 tracking-tight">Inventory <span class="text-emerald-400">Triage</span></h1>
+    <p class="text-slate-400 text-sm mb-8">Warehouse Mapping Tool</p>
+
+    <div class="w-full max-w-md bg-slate-800 rounded-3xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col items-center justify-center p-4 aspect-square mb-6 relative">
+        
+        <p id="msg" class="text-slate-400 font-medium animate-pulse">Initial Load...</p>
+        
+        <img id="display-img" class="w-full h-full object-contain rounded-xl" style="display:none;">
     </div>
     
-    <div id="status">Ready to map.</div>
+    <div class="h-12 flex items-center justify-center mb-4">
+        <div id="status" class="text-emerald-400 font-semibold text-lg px-4 py-2 bg-emerald-400/10 rounded-lg border border-emerald-400/20">
+            Ready to map.
+        </div>
+    </div>
     
-    <div class="btn-container">
-        <button id="mic-btn" onclick="startVoice()">🎤 TAP & SPEAK</button>
-        <button id="trash-btn" onclick="sendTrashCommand()">🗑️ TRASH IMAGE</button>
+    <div class="w-full max-w-md flex flex-col gap-4 px-2">
+        
+        <button id="mic-btn" onclick="startVoice()" 
+            class="w-full bg-emerald-500 hover:bg-emerald-400 active:scale-95 transition-all duration-200 text-white py-5 rounded-2xl font-bold text-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] flex items-center justify-center gap-3">
+            <span class="text-2xl">🎤</span> TAP & SPEAK
+        </button>
+        
+        <button id="trash-btn" onclick="sendTrashCommand()" 
+            class="w-full bg-slate-800 hover:bg-red-500/20 active:scale-95 transition-all duration-200 text-red-400 border-2 border-slate-700 hover:border-red-500/50 py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-3">
+            <span>🗑️</span> TRASH IMAGE
+        </button>
+        
     </div>
 
+    <script>
+        const API_URL = "YOUR_GOOGLE_SCRIPT_URL_HERE"; 
+        // ... rest of your javascript ...
     <script>
         // CAREFULLY REPLACE THIS URL
         const API_URL = "https://script.google.com/macros/s/AKfycbz9nnpGQfoGwhj5r1KMC7l6Q57eShm02k7etc8L3DwQCqEBv_W3jvT8QCz3R3iTTvkioA/exec"; 
