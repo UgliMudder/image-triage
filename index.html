@@ -3,89 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventory Triage - GitHub Edition</title>
+    <title>Inventory Triage</title>
     <style>
         body { font-family: system-ui; text-align: center; background: #121212; color: white; padding: 20px; }
         #img-container { width: 100%; max-width: 500px; height: 400px; margin: 20px auto; background: #000; display: flex; align-items: center; justify-content: center; border-radius: 15px; border: 2px solid #333; overflow: hidden; }
-        img { max-width: 100%; max-height: 100%; }
+        img { max-width: 100%; max-height: 100%; border-radius: 8px; }
         #mic-btn { background: #e50914; color: white; border: none; padding: 30px; width: 80%; font-size: 1.5rem; border-radius: 50px; font-weight: bold; cursor: pointer; }
         #status { margin: 20px; color: #00ffcc; font-size: 1.2rem; min-height: 1.5em; }
+        #msg { padding: 20px; color: #888; }
     </style>
 </head>
 <body>
 
     <h1>Inventory Triage</h1>
     <div id="img-container">
-        <p id="msg">Connecting to Google Sheets...</p>
+        <p id="msg">Connecting to Warehouse Drive...</p>
         <img id="display-img" style="display:none;">
     </div>
     <div id="status">Ready to map.</div>
-    <button id="mic-btn">🎤 TAP & SPEAK</button>
+    <button id="mic-btn" onclick="startVoice()">🎤 TAP & SPEAK</button>
 
     <script>
-        // PASTE YOUR GOOGLE WEB APP URL HERE
-        const API_URL = "https://script.google.com/macros/s/AKfycby_50BTeTJBd6OvGo0M6SJK5827qsImOj6vr8rCjcuX6aC4unVyFI8-ecxg01NWhgrOKQ/exec"; 
+        // REPLACE THIS URL with your actual Google Script Exec URL
+        const API_URL = "YOUR_GOOGLE_SCRIPT_URL_HERE"; 
         let currentImageId = "";
 
-        window.onload = loadNext;
-
-        aasync function loadNext() {
-    const img = document.getElementById('display-img');
-    const msg = document.getElementById('msg');
-    
-    img.style.display = 'none';
-    msg.style.display = 'block';
-    msg.innerText = "Connecting to Warehouse Drive...";
-
-    try {
-        // We add a 'cache: no-store' to make sure we always get a fresh image
-        const response = await fetch(`${API_URL}?action=getNext`, {
-            method: 'GET',
-            redirect: 'follow'
-        });
-        
-        const file = await response.json();
-
-        if (file && file.url) {
-            currentImageId = file.id;
-            img.src = file.url;
-            img.onload = () => {
-                msg.style.display = 'none';
-                img.style.display = 'block';
-            };
-        } else {
-            msg.innerText = "All images mapped or none found in folder.";
-        }
-    } catch (error) {
-        msg.innerText = "Connection Error. Check if Google Script is deployed as 'Anyone'.";
-        console.error(error);
-    }
-}
-        const btn = document.getElementById('mic-btn');
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-
-        btn.onclick = () => recognition.start();
-
-        recognition.onstart = () => document.getElementById('status').innerText = "Listening...";
-        
-        recognition.onresult = async (event) => {
-            const voiceInput = event.results[0][0].transcript;
-            document.getElementById('status').innerText = `Searching: ${voiceInput}`;
-
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify({ voiceInput, imageId: currentImageId })
-            });
-            const result = await response.json();
-
-            if (result.success) {
-                document.getElementById('status').innerText = `Matched: ${result.productName}`;
-                setTimeout(loadNext, 1000);
-            } else {
-                document.getElementById('status').innerText = "No match. Try again.";
-            }
+        // Load image immediately on start
+        window.onload = function() {
+            loadNext();
         };
+
+        async function loadNext() {
+            const img = document.getElementById('display-img');
+            const msg = document.getElementById('msg');
+            img.style.display = 'none';
+            msg.style.display = 'block';
+            msg.innerText = "Fetching next image...";
+
+            try {
+                const response = await fetch(API_URL + "?action=getNext");
+                const file = await response.json();
+
+                if (file && file.url) {
+                    currentImageId = file.id;
+                    img.src = file.url;
+                    img.onload = () => {
+                        msg.style.display = 'none';
+                        img.style.display = 'block';
+                    };
+                } else {
+                    msg.innerText = "No unmapped images found.";
+                }
+            } catch (err) {
+                msg.innerText = "Connection Error. check API_URL.";
+                console.error(err);
+            }
+        }
+
+        function startVoice() {
+            const status = document.getElementById('status');
+            const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                status.innerText = "Speech API not supported.";
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.onstart = () => { status.innerText = "Listening..."; };
+            
+            recognition.onresult = async (event) => {
+                const voiceInput = event.results[0][0].transcript;
+                status.innerText = "Matching: " + voiceInput;
+
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ voiceInput: voiceInput, imageId: currentImageId })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        status.innerText = "Success: " + result.productName;
+                        setTimeout(loadNext, 1000);
+                    }
+                } catch (err) {
+                    status.innerText = "Match error.";
+                }
+            };
+            recognition.start();
+        }
     </script>
 </body>
 </html>
