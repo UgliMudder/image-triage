@@ -24,7 +24,7 @@
     <button id="mic-btn" onclick="startVoice()">🎤 TAP & SPEAK</button>
 
     <script>
-        // REPLACE THIS URL with your actual Google Script Exec URL
+        // Your live API URL
         const API_URL = "https://script.google.com/macros/s/AKfycbz9nnpGQfoGwhj5r1KMC7l6Q57eShm02k7etc8L3DwQCqEBv_W3jvT8QCz3R3iTTvkioA/exec"; 
         let currentImageId = "";
 
@@ -44,9 +44,16 @@
                 if (file && file.url) {
                     currentImageId = file.id;
                     img.src = file.url;
+                    
                     img.onload = () => {
                         msg.style.display = 'none';
                         img.style.display = 'block';
+                    };
+                    
+                    // NEW: Tells you if Drive is blocking the image
+                    img.onerror = () => {
+                        msg.innerText = "Image load blocked. Check Google Drive folder permissions.";
+                        img.style.display = 'none';
                     };
                 } else {
                     msg.innerText = "No unmapped images found.";
@@ -76,6 +83,8 @@
                 try {
                     const response = await fetch(API_URL, {
                         method: 'POST',
+                        // NEW: Bypasses strict CORS blocks for POST requests
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify({ voiceInput: voiceInput, imageId: currentImageId })
                     });
                     const result = await response.json();
@@ -84,7 +93,7 @@
                         setTimeout(loadNext, 800);
                     }
                 } catch (err) {
-                    status.innerText = "Match error.";
+                    status.innerText = "Match error. Check connection.";
                     console.error(err);
                 }
             };
