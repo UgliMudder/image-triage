@@ -18,7 +18,7 @@
         #trash-btn:active { background: #ff4d4d; color: white; }
 
         #status { margin: 15px; color: #00ffcc; font-size: 1.2rem; min-height: 1.5em; }
-        #msg { padding: 20px; color: #888; }
+        #msg { padding: 20px; color: #888; font-size: 1.1rem; }
     </style>
 </head>
 <body>
@@ -37,15 +37,19 @@
     </div>
 
     <script>
-        // REPLACE WITH YOUR NEW DEPLOYMENT URL
+        // CAREFULLY REPLACE THIS URL
         const API_URL = "https://script.google.com/macros/s/AKfycbz9nnpGQfoGwhj5r1KMC7l6Q57eShm02k7etc8L3DwQCqEBv_W3jvT8QCz3R3iTTvkioA/exec"; 
         let currentImageId = "";
 
-        window.onload = function() { loadNext(); };
+        // Wait for page to fully load before firing (safer for mobile Safari/Chrome)
+        document.addEventListener("DOMContentLoaded", () => {
+            loadNext();
+        });
 
         async function loadNext() {
             const img = document.getElementById('display-img');
             const msg = document.getElementById('msg');
+            
             img.style.display = 'none';
             msg.style.display = 'block';
             msg.innerText = "Fetching next image...";
@@ -64,11 +68,10 @@
                     };
                     
                     img.onerror = () => {
-                        // This will print the exact file format the script sent
-                        let format = file.url ? file.url.substring(0, 40) : "URL is missing (Old Script Running)";
-                        msg.innerText = "Browser refused to render this file.\nFormat: " + format;
+                        // Diagnostic text if the image is an incompatible format (like HEIC)
+                        let format = file.url ? file.url.substring(0, 30) : "URL missing";
+                        msg.innerText = "Browser refused to render.\nFormat: " + format + "...";
                         img.style.display = 'none';
-                    };
                     };
                 } else {
                     msg.innerText = "All images mapped or trashed!";
@@ -79,9 +82,10 @@
             }
         }
 
-        // PHYSICAL TRASH BUTTON LOGIC
         async function sendTrashCommand() {
             const status = document.getElementById('status');
+            if(!currentImageId) return; // Prevent clicking if no image loaded
+            
             status.innerText = "Trashing...";
             status.style.color = "#ff4d4d";
 
@@ -109,10 +113,10 @@
         function startVoice() {
             const status = document.getElementById('status');
             status.style.color = "#00ffcc";
-            const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
             
+            const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
             if (!SpeechRecognition) {
-                status.innerText = "Mic API not supported.";
+                status.innerText = "Mic API not supported on this browser.";
                 return;
             }
 
