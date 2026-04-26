@@ -8,7 +8,7 @@
         body { font-family: system-ui; text-align: center; background: #121212; color: white; padding: 20px; }
         #img-container { width: 100%; max-width: 500px; height: 400px; margin: 20px auto; background: #000; display: flex; align-items: center; justify-content: center; border-radius: 15px; border: 2px solid #333; overflow: hidden; }
         img { max-width: 100%; max-height: 100%; border-radius: 8px; }
-        #mic-btn { background: #e50914; color: white; border: none; padding: 30px; width: 80%; font-size: 1.5rem; border-radius: 50px; font-weight: bold; cursor: pointer; }
+        #mic-btn { background: #e50914; color: white; border: none; padding: 30px; width: 80%; font-size: 1.5rem; border-radius: 50px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         #status { margin: 20px; color: #00ffcc; font-size: 1.2rem; min-height: 1.5em; }
         #msg { padding: 20px; color: #888; }
     </style>
@@ -17,7 +17,7 @@
 
     <h1>Inventory Triage</h1>
     <div id="img-container">
-        <p id="msg">Connecting to Warehouse Drive...</p>
+        <p id="msg">Initial Load...</p>
         <img id="display-img" style="display:none;">
     </div>
     <div id="status">Ready to map.</div>
@@ -25,13 +25,10 @@
 
     <script>
         // REPLACE THIS URL with your actual Google Script Exec URL
-        const API_URL = "YOUR_GOOGLE_SCRIPT_URL_HERE"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbz1gL0idO-zfw4xuCWsJGwicqnDXDNmkEJ7vcxdVOdw3IW6io21PHHy8l9YEzvxNSb_jw/exec"; 
         let currentImageId = "";
 
-        // Load image immediately on start
-        window.onload = function() {
-            loadNext();
-        };
+        window.onload = function() { loadNext(); };
 
         async function loadNext() {
             const img = document.getElementById('display-img');
@@ -55,7 +52,7 @@
                     msg.innerText = "No unmapped images found.";
                 }
             } catch (err) {
-                msg.innerText = "Connection Error. check API_URL.";
+                msg.innerText = "Connection Error. Check API_URL.";
                 console.error(err);
             }
         }
@@ -65,7 +62,7 @@
             const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
             
             if (!SpeechRecognition) {
-                status.innerText = "Speech API not supported.";
+                status.innerText = "Mic API not supported.";
                 return;
             }
 
@@ -84,10 +81,11 @@
                     const result = await response.json();
                     if (result.success) {
                         status.innerText = "Success: " + result.productName;
-                        setTimeout(loadNext, 1000);
+                        setTimeout(loadNext, 800);
                     }
                 } catch (err) {
                     status.innerText = "Match error.";
+                    console.error(err);
                 }
             };
             recognition.start();
