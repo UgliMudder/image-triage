@@ -6,10 +6,18 @@
     <title>Inventory Triage</title>
     <style>
         body { font-family: system-ui; text-align: center; background: #121212; color: white; padding: 20px; }
-        #img-container { width: 100%; max-width: 500px; height: 400px; margin: 20px auto; background: #000; display: flex; align-items: center; justify-content: center; border-radius: 15px; border: 2px solid #333; overflow: hidden; }
+        #img-container { width: 100%; max-width: 500px; height: 350px; margin: 10px auto; background: #000; display: flex; align-items: center; justify-content: center; border-radius: 15px; border: 2px solid #333; overflow: hidden; }
         img { max-width: 100%; max-height: 100%; border-radius: 8px; }
-        #mic-btn { background: #e50914; color: white; border: none; padding: 30px; width: 80%; font-size: 1.5rem; border-radius: 50px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        #status { margin: 20px; color: #00ffcc; font-size: 1.2rem; min-height: 1.5em; }
+        
+        .btn-container { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-top: 10px; }
+        
+        #mic-btn { background: #00cc66; color: white; border: none; padding: 25px; width: 90%; max-width: 400px; font-size: 1.5rem; border-radius: 50px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,204,102,0.3); }
+        #mic-btn:active { transform: scale(0.98); }
+        
+        #trash-btn { background: #333; color: #ff4d4d; border: 2px solid #ff4d4d; padding: 15px; width: 90%; max-width: 400px; font-size: 1.2rem; border-radius: 50px; font-weight: bold; cursor: pointer; }
+        #trash-btn:active { background: #ff4d4d; color: white; }
+
+        #status { margin: 15px; color: #00ffcc; font-size: 1.2rem; min-height: 1.5em; }
         #msg { padding: 20px; color: #888; }
     </style>
 </head>
@@ -20,11 +28,16 @@
         <p id="msg">Initial Load...</p>
         <img id="display-img" style="display:none;">
     </div>
+    
     <div id="status">Ready to map.</div>
-    <button id="mic-btn" onclick="startVoice()">🎤 TAP & SPEAK</button>
+    
+    <div class="btn-container">
+        <button id="mic-btn" onclick="startVoice()">🎤 TAP & SPEAK</button>
+        <button id="trash-btn" onclick="sendTrashCommand()">🗑️ TRASH IMAGE</button>
+    </div>
 
     <script>
-        // Your live API URL
+        // REPLACE WITH YOUR NEW DEPLOYMENT URL
         const API_URL = "https://script.google.com/macros/s/AKfycbz9nnpGQfoGwhj5r1KMC7l6Q57eShm02k7etc8L3DwQCqEBv_W3jvT8QCz3R3iTTvkioA/exec"; 
         let currentImageId = "";
 
@@ -50,13 +63,12 @@
                         img.style.display = 'block';
                     };
                     
-                    // NEW: Tells you if Drive is blocking the image
                     img.onerror = () => {
-                        msg.innerText = "Image load blocked. Check Google Drive folder permissions.";
+                        msg.innerText = "Image load blocked. Check Google Drive permissions.";
                         img.style.display = 'none';
                     };
                 } else {
-                    msg.innerText = "No unmapped images found.";
+                    msg.innerText = "All images mapped or trashed!";
                 }
             } catch (err) {
                 msg.innerText = "Connection Error. Check API_URL.";
@@ -64,8 +76,36 @@
             }
         }
 
+        // PHYSICAL TRASH BUTTON LOGIC
+        async function sendTrashCommand() {
+            const status = document.getElementById('status');
+            status.innerText = "Trashing...";
+            status.style.color = "#ff4d4d";
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ voiceInput: "trash", imageId: currentImageId })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    status.innerText = result.productName;
+                    setTimeout(() => { 
+                        status.style.color = "#00ffcc";
+                        loadNext(); 
+                    }, 800);
+                }
+            } catch (err) {
+                status.innerText = "Error trashing image.";
+                console.error(err);
+            }
+        }
+
         function startVoice() {
             const status = document.getElementById('status');
+            status.style.color = "#00ffcc";
             const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
             
             if (!SpeechRecognition) {
@@ -78,19 +118,26 @@
             
             recognition.onresult = async (event) => {
                 const voiceInput = event.results[0][0].transcript;
-                status.innerText = "Matching: " + voiceInput;
+                status.innerText = "Processing: " + voiceInput;
 
                 try {
                     const response = await fetch(API_URL, {
                         method: 'POST',
-                        // NEW: Bypasses strict CORS blocks for POST requests
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify({ voiceInput: voiceInput, imageId: currentImageId })
                     });
                     const result = await response.json();
+                    
                     if (result.success) {
                         status.innerText = "Success: " + result.productName;
-                        setTimeout(loadNext, 800);
+                        if (result.productName.includes("TRASH")) status.style.color = "#ff4d4d";
+                        setTimeout(() => { 
+                            status.style.color = "#00ffcc";
+                            loadNext(); 
+                        }, 1000);
+                    } else {
+                        status.innerText = "No match for '" + voiceInput + "'. Try again.";
+                        status.style.color = "yellow";
                     }
                 } catch (err) {
                     status.innerText = "Match error. Check connection.";
